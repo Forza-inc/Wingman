@@ -239,6 +239,37 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0;}
 .sds-pill:hover{background:#1B3764;color:#fff;border-color:#1B3764;}
 .vtbl td,.fg-tbl td{vertical-align:middle;}.vtbl td:first-child{white-space:nowrap;}.fg-tbl td:nth-child(3),.fg-tbl td:nth-child(4){white-space:nowrap;}
 .vtbl-vert th:nth-child(2),.vtbl-vert td:nth-child(2){width:70px;padding-left:0;padding-right:4px;}
+
+.price-pill{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:10px;font-size:.58rem;font-weight:700;cursor:pointer;font-family:Poppins,sans-serif;white-space:nowrap;border:1px solid;transition:background .15s;}
+.price-pill-has{background:#E8F5F6;color:#0D5C63;border-color:#0D5C63;}
+.price-pill-has:hover{background:#0D5C63;color:#fff;}
+.price-pill-add{background:#F5F5F5;color:#888;border-color:#ccc;}
+.price-pill-add:hover{background:#1B3764;color:#fff;border-color:#1B3764;}
+.price-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9000;align-items:center;justify-content:center;}
+.price-modal-overlay.active{display:flex;}
+.price-modal{background:#fff;border-radius:10px;width:min(560px,95vw);max-height:85vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.25);font-family:Poppins,sans-serif;}
+.price-modal-hdr{background:#1B3764;color:#fff;padding:14px 18px;border-radius:10px 10px 0 0;display:flex;align-items:center;justify-content:space-between;}
+.price-modal-hdr h3{font-size:.85rem;font-weight:700;margin:0;}
+.price-modal-close{background:none;border:none;color:#fff;font-size:1.2rem;cursor:pointer;line-height:1;}
+.price-modal-body{padding:18px;}
+.price-section-lbl{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#F16A26;margin:0 0 10px;}
+.price-history-tbl{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:.72rem;}
+.price-history-tbl th{background:#F2F4F7;color:#555;font-weight:700;padding:6px 8px;text-align:left;border-bottom:2px solid #E0E0E0;}
+.price-history-tbl td{padding:6px 8px;border-bottom:1px solid #F0F0F0;color:#333;vertical-align:middle;}
+.price-history-tbl tr:last-child td{border-bottom:none;}
+.price-edit-btn{background:none;border:none;cursor:pointer;color:#1B3764;font-size:.75rem;padding:2px 4px;}
+.price-edit-btn:hover{color:#F16A26;}
+.price-add-form{background:#F8F9FA;border-radius:8px;padding:14px;border:1px solid #E0E0E0;}
+.price-form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.price-form-row.full{grid-template-columns:1fr;}
+.price-form-lbl{font-size:.65rem;font-weight:700;color:#555;display:block;margin-bottom:4px;}
+.price-form-inp{width:100%;padding:7px 10px;border:1px solid #D0D5DD;border-radius:6px;font-size:.76rem;font-family:Poppins,sans-serif;box-sizing:border-box;}
+.price-form-inp:focus{outline:none;border-color:#1B3764;}
+.price-submit-btn{background:#1B3764;color:#fff;border:none;border-radius:6px;padding:8px 18px;font-size:.76rem;font-weight:700;cursor:pointer;font-family:Poppins,sans-serif;width:100%;}
+.price-submit-btn:hover{background:#F16A26;}
+.price-empty{color:#aaa;font-size:.75rem;font-style:italic;padding:8px 0;}
+.price-editing-badge{background:#FFF3E0;border:1px solid #F16A26;color:#C07000;font-size:.62rem;font-weight:700;padding:2px 8px;border-radius:4px;margin-left:8px;}
+
 </style>
 <link rel="apple-touch-icon" href="/Wingman/icon.png">
 <link rel="icon" type="image/png" href="/Wingman/icon.png">
@@ -608,6 +639,200 @@ function buildTraining(){
   return sec;
 }
 
+
+// ── COMPETITOR PRICING FEATURE ────────────────────────────────────────────
+var pricingDb = null;
+var pricingCache = {};  // {skuKey: [entries]}
+var editingEntryId = null;
+var editingSkuKey = null;
+
+function skuToPriceKey(sku) {
+  return sku.replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+}
+
+function initPricingDb() {
+  if (window.fbDb && !pricingDb) {
+    pricingDb = window.fbDb.ref('competitor_pricing');
+    pricingDb.on('value', function(snap) {
+      pricingCache = snap.val() || {};
+      // Re-render all pricing pills if crosswalk is visible
+      document.querySelectorAll('[data-price-key]').forEach(function(pill) {
+        var key = pill.getAttribute('data-price-key');
+        updatePricePill(pill, key);
+      });
+    });
+  }
+}
+
+function updatePricePill(pill, key) {
+  var entries = pricingCache[key] ? Object.values(pricingCache[key]) : [];
+  if (entries.length > 0) {
+    pill.className = 'price-pill price-pill-has';
+    pill.textContent = '\uD83D\uDCB2 PRICING (' + entries.length + ')';
+  } else {
+    pill.className = 'price-pill price-pill-add';
+    pill.textContent = '+ ADD';
+  }
+}
+
+function mkPricePill(compSku) {
+  var key = skuToPriceKey(compSku);
+  var pill = document.createElement('span');
+  pill.setAttribute('data-price-key', key);
+  pill.setAttribute('data-comp-sku', compSku);
+  var entries = pricingCache[key] ? Object.values(pricingCache[key]) : [];
+  if (entries.length > 0) {
+    pill.className = 'price-pill price-pill-has';
+    pill.textContent = '\uD83D\uDCB2 PRICING (' + entries.length + ')';
+  } else {
+    pill.className = 'price-pill price-pill-add';
+    pill.textContent = '+ ADD';
+  }
+  pill.addEventListener('click', function(e) {
+    e.stopPropagation();
+    openPriceModal(compSku);
+  });
+  return pill;
+}
+
+function openPriceModal(compSku) {
+  editingEntryId = null;
+  editingSkuKey = skuToPriceKey(compSku);
+  var overlay = document.getElementById('priceModalOverlay');
+  overlay.classList.add('active');
+  renderPriceModal(compSku);
+}
+
+function closePriceModal() {
+  document.getElementById('priceModalOverlay').classList.remove('active');
+  editingEntryId = null;
+  editingSkuKey = null;
+}
+
+function renderPriceModal(compSku) {
+  var key = skuToPriceKey(compSku);
+  var entries = pricingCache[key] ? Object.values(pricingCache[key]).sort(function(a,b){return b.date>a.date?1:-1;}) : [];
+  var repName = getRepName() || '';
+
+  var modal = document.getElementById('priceModalContent');
+  modal.innerHTML = '';
+
+  // Header
+  var hdr = document.createElement('div');
+  hdr.className = 'price-modal-hdr';
+  hdr.innerHTML = '<h3>\uD83D\uDCB2 Competitor Pricing \u2014 ' + compSku + '</h3><button class="price-modal-close" onclick="closePriceModal()">\u00D7</button>';
+  modal.appendChild(hdr);
+
+  var body = document.createElement('div');
+  body.className = 'price-modal-body';
+
+  // History section
+  var histLbl = document.createElement('div');
+  histLbl.className = 'price-section-lbl';
+  histLbl.textContent = 'Known Pricing';
+  body.appendChild(histLbl);
+
+  if (entries.length === 0) {
+    var empty = document.createElement('div');
+    empty.className = 'price-empty';
+    empty.textContent = 'No pricing submitted yet. Be the first to add it below.';
+    body.appendChild(empty);
+  } else {
+    var tbl = document.createElement('table');
+    tbl.className = 'price-history-tbl';
+    tbl.innerHTML = '<thead><tr><th>Price</th><th>Unit</th><th>Channel</th><th>Rep</th><th>Date</th><th></th></tr></thead>';
+    var tbody = document.createElement('tbody');
+    var entryIds = pricingCache[key] ? Object.keys(pricingCache[key]) : [];
+    var entryArr = entryIds.map(function(id) { return {id:id, data:pricingCache[key][id]}; });
+    entryArr.sort(function(a,b){return b.data.date>a.data.date?1:-1;});
+    entryArr.forEach(function(e) {
+      var tr = document.createElement('tr');
+      var isEditing = (editingEntryId === e.id);
+      tr.innerHTML =
+        '<td><strong>$' + parseFloat(e.data.price).toFixed(2) + '</strong>' + (isEditing ? '<span class="price-editing-badge">editing</span>' : '') + '</td>' +
+        '<td>' + (e.data.unit||'') + '</td>' +
+        '<td>' + (e.data.channel||'') + '</td>' +
+        '<td>' + (e.data.rep||'') + '</td>' +
+        '<td>' + (e.data.date||'') + '</td>' +
+        '<td><button class="price-edit-btn" title="Edit this entry">\u270F\uFE0F</button></td>';
+      tr.querySelector('.price-edit-btn').addEventListener('click', function() {
+        editingEntryId = e.id;
+        renderPriceModal(compSku);
+      });
+      tbody.appendChild(tr);
+    });
+    tbl.appendChild(tbody);
+    body.appendChild(tbl);
+  }
+
+  // Divider
+  var div = document.createElement('hr');
+  div.style.cssText = 'border:none;border-top:1px solid #E0E0E0;margin:16px 0;';
+  body.appendChild(div);
+
+  // Form section
+  var formLbl = document.createElement('div');
+  formLbl.className = 'price-section-lbl';
+  formLbl.textContent = editingEntryId ? 'Edit Pricing Entry' : 'Submit Pricing';
+  body.appendChild(formLbl);
+
+  // Pre-fill if editing
+  var prefill = {};
+  if (editingEntryId && pricingCache[key] && pricingCache[key][editingEntryId]) {
+    prefill = pricingCache[key][editingEntryId];
+  }
+
+  var form = document.createElement('div');
+  form.className = 'price-add-form';
+  form.innerHTML =
+    '<div class="price-form-row">' +
+      '<div><label class="price-form-lbl">Price (USD)</label><input class="price-form-inp" id="pf-price" type="number" step="0.01" min="0" placeholder="e.g. 48.50" value="' + (prefill.price||'') + '"></div>' +
+      '<div><label class="price-form-lbl">Unit / Size</label><input class="price-form-inp" id="pf-unit" type="text" placeholder="e.g. per gallon, per canister" value="' + (prefill.unit||'') + '"></div>' +
+    '</div>' +
+    '<div class="price-form-row">' +
+      '<div><label class="price-form-lbl">Channel (Distributor or Direct)</label><input class="price-form-inp" id="pf-channel" type="text" placeholder="e.g. Grainger, ABC Supply, Direct" value="' + (prefill.channel||'') + '"></div>' +
+      '<div><label class="price-form-lbl">Your Name</label><input class="price-form-inp" id="pf-rep" type="text" placeholder="Rep name" value="' + (prefill.rep||repName) + '"' + (repName?' readonly':'') + '></div>' +
+    '</div>' +
+    '<div class="price-form-row full">' +
+      '<button class="price-submit-btn" id="pf-submit">' + (editingEntryId ? 'Save Changes' : 'Submit Pricing') + '</button>' +
+    '</div>';
+
+  form.querySelector('#pf-submit').addEventListener('click', function() {
+    var price = parseFloat(document.getElementById('pf-price').value);
+    var unit = document.getElementById('pf-unit').value.trim();
+    var channel = document.getElementById('pf-channel').value.trim();
+    var rep = document.getElementById('pf-rep').value.trim();
+    if (isNaN(price) || price <= 0) { alert('Please enter a valid price.'); return; }
+    if (!unit) { alert('Please enter a unit or size (e.g. per gallon).'); return; }
+    if (!channel) { alert('Please enter the channel (distributor name or Direct).'); return; }
+    if (!rep) { alert('Please enter your name.'); return; }
+    var entry = { price: price, unit: unit, channel: channel, rep: rep, date: new Date().toLocaleDateString(), compSku: compSku };
+    var ref = pricingDb ? pricingDb.child(key) : null;
+    if (ref) {
+      if (editingEntryId) {
+        ref.child(editingEntryId).set(entry).then(function() {
+          editingEntryId = null;
+          renderPriceModal(compSku);
+        });
+      } else {
+        ref.push(entry).then(function() { renderPriceModal(compSku); });
+      }
+    } else {
+      // Fallback: store locally if Firebase not available
+      if (!pricingCache[key]) pricingCache[key] = {};
+      var localId = 'local_' + Date.now();
+      pricingCache[key][localId] = entry;
+      editingEntryId = null;
+      renderPriceModal(compSku);
+    }
+  });
+  body.appendChild(form);
+  modal.appendChild(body);
+}
+
+// Init pricing when Firebase is ready
+setTimeout(function() { initPricingDb(); }, 1000);
+
 function showTab(t){
   ['lookup','verticals','intel','fieldguides','documents','blog','whitepapers','training'].forEach(function(id){
     var s=document.getElementById('sec-'+id);var b=document.getElementById('tb-'+id);
@@ -962,7 +1187,7 @@ function showIntelDetail(c,view){
     if(c.seeds&&c.seeds.length){dp.appendChild(mk('div','bc-label','Quick Dismisses'));c.seeds.forEach(function(s){var sb=mk('div','seed-box');var lbl=mk('span','seed-action','⚡ SAY THIS: ');sb.appendChild(lbl);sb.appendChild(document.createTextNode(s));dp.appendChild(sb);});}
     if(c.landmines&&c.landmines.length){dp.appendChild(mk('div','bc-label','Landmines'));c.landmines.forEach(function(l){var b=mk('div','lm-box');var plantRow=mk('div','lm-plant-row');var plantLbl=mk('span','lm-action-lbl','💣 PLANT THIS QUESTION:');var plantTxt=mk('span','lm-title-txt',l[0]);plantRow.appendChild(plantLbl);plantRow.appendChild(plantTxt);b.appendChild(plantRow);if(l[1]){var ctxRow=mk('div','lm-ctx-row');var ctxLbl=mk('span','lm-ctx-lbl','CONTEXT: ');var ctxTxt=mk('span','lm-body',l[1]);ctxRow.appendChild(ctxLbl);ctxRow.appendChild(ctxTxt);b.appendChild(ctxRow);}dp.appendChild(b);});}
     if(c.objections&&c.objections.length){dp.appendChild(mk('div','bc-label','Objection Handling'));c.objections.forEach(function(o){var b=mk('div','obj-box');b.appendChild(mk('div','obj-q','“'+o[0]+'”'));b.appendChild(mk('div','obj-a',o[1]));dp.appendChild(b);});}
-    if(c.crosswalk&&c.crosswalk.length){dp.appendChild(mk('div','bc-label','Key SKU Crosswalk'));var tbl=mk('table','vtbl'),thead=mk('thead'),hrow=mk('tr');['Competitor SKU','Application','Forza Equivalent'].forEach(function(h){hrow.appendChild(mk('th',null,h));});thead.appendChild(hrow);tbl.appendChild(thead);var tb=mk('tbody');c.crosswalk.forEach(function(r){var tr=mk('tr');tr.appendChild(mk('td',null,r.sku));tr.appendChild(mk('td',null,r.app));var xTd=mk('td');xTd.appendChild(mkSkuCell(r.ind,function(sk){showVertPopup(sk);}));tr.appendChild(xTd);tb.appendChild(tr);});tbl.appendChild(tb);makeSortable(tbl);dp.appendChild(tbl);}
+    if(c.crosswalk&&c.crosswalk.length){dp.appendChild(mk('div','bc-label','Key SKU Crosswalk'));var tbl=mk('table','vtbl'),thead=mk('thead'),hrow=mk('tr');['Competitor SKU','Application','Forza Equivalent','Pricing'].forEach(function(h){hrow.appendChild(mk('th',null,h));});thead.appendChild(hrow);tbl.appendChild(thead);var tb=mk('tbody');c.crosswalk.forEach(function(r){var tr=mk('tr');tr.appendChild(mk('td',null,r.sku));tr.appendChild(mk('td',null,r.app));var xTd=mk('td');xTd.appendChild(mkSkuCell(r.ind,function(sk){showVertPopup(sk);}));tr.appendChild(xTd);var pTd=mk('td');pTd.appendChild(mkPricePill(r.sku));tr.appendChild(pTd);tb.appendChild(tr);});tbl.appendChild(tb);makeSortable(tbl);dp.appendChild(tbl);}
     var swg=mk('div','sw-grid');var wb=mk('div','sw-box');wb.appendChild(mk('div','sw-label sw-win','Where Forza Wins'));c.wins.forEach(function(w){wb.appendChild(mk('div','sw-item win',w));});swg.appendChild(wb);if(c.moats&&c.moats.length){var mb=mk('div','sw-box');mb.appendChild(mk('div','sw-label sw-gap','Do Not Fight These'));c.moats.forEach(function(m){mb.appendChild(mk('div','sw-item gap',m));});swg.appendChild(mb);}dp.appendChild(swg);det.appendChild(dp);
   }else if(view==='crosswalk'){
     var dp=mk('div','dp');dp.appendChild(mk('div','dp-title',c.name+' — Full SKU Crosswalk'));dp.appendChild(mk('div','dp-meta',c.brands));
@@ -970,11 +1195,11 @@ function showIntelDetail(c,view){
     var allSkus=SKU.filter(function(s){var brand=s.brand.toLowerCase().replace(/[^a-z0-9]/g,' ').trim();return brand===compName||brand.indexOf(compName)>-1||compName.indexOf(brand)>-1;});
     var hasAsterisk=allSkus.some(function(s){return s.ind&&s.ind.endsWith('*');});
     if(allSkus.length){
-      var tbl=mk('table','vtbl'),thead=mk('thead'),hrow=mk('tr');['Competitor SKU','Application','Forza Equivalent'].forEach(function(h){hrow.appendChild(mk('th',null,h));});thead.appendChild(hrow);tbl.appendChild(thead);
+      var tbl=mk('table','vtbl'),thead=mk('thead'),hrow=mk('tr');['Competitor SKU','Application','Forza Equivalent','Pricing'].forEach(function(h){hrow.appendChild(mk('th',null,h));});thead.appendChild(hrow);tbl.appendChild(thead);
       var tb=mk('tbody');allSkus.forEach(function(s){var tr=mk('tr');tr.appendChild(mk('td',null,s.comp));tr.appendChild(mk('td',null,s.app));var indCell=mk('td');indCell.appendChild(mkSkuCell(s.ind,function(sk){showVertPopup(sk);}));
         var baseInd=s.ind?s.ind.replace('*',''):'';indCell.style.cursor='pointer';indCell.title='Tap to see vertical equivalents';
         indCell.addEventListener('click',(function(bi){return function(e){e.stopPropagation();showVertPopup(bi);};})(baseInd));
-        tr.appendChild(indCell);tb.appendChild(tr);});
+        tr.appendChild(indCell);var _pTd=mk('td');_pTd.appendChild(mkPricePill(s.comp));tr.appendChild(_pTd);tb.appendChild(tr);});
       tbl.appendChild(tb);makeSortable(tbl);dp.appendChild(tbl);
       if(hasAsterisk){var note=mk('div','');note.style.cssText='margin-top:10px;padding:8px 12px;background:#FFF8EC;border-left:3px solid #F16022;font-size:.72rem;color:#555;line-height:1.5;';note.textContent='* Chemistry family match — Forza equivalent is in the same product class but may differ in specific formulation, cure system, or performance characteristics. Verify application suitability and compare TDS before substituting.';dp.appendChild(note);}
     }else{dp.appendChild(mk('div','info','No SKUs found for this competitor.'));}
@@ -1198,6 +1423,10 @@ function closeVertPopup(){document.getElementById('vertPopupOverlay').style.disp
     </div>
     <div class="vert-popup-body" id="vertPopupBody"></div>
   </div>
+</div>
+
+<div class="price-modal-overlay" id="priceModalOverlay" onclick="if(event.target===this)closePriceModal()">
+  <div class="price-modal" id="priceModalContent"></div>
 </div>
 </body>
 </html>
