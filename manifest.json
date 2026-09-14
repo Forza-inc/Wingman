@@ -1,7 +1,7 @@
 {
-  "name": "Forza CI Hub",
-  "short_name": "Forza CI",
-  "description": "Forza Competitive Intelligence Hub",
+  "name": "Forza Wingman Hub",
+  "short_name": "Forza Wingman",
+  "description": "Forza Wingman Hub",
   "start_url": "/Wingman/",
   "scope": "/Wingman/",
   "display": "standalone",
