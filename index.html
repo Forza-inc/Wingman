@@ -686,10 +686,11 @@ function buildDiagnosticTraining(){
   });
   wrap.appendChild(qTbl);
 
-  // PART 2 — chemistry primer (collapsible)
+  // PART 2 — chemistry primer (always shown — a hidden-by-default section
+  // people won't bother expanding, per user's Sept 2026 feedback)
   var chemToggle=document.createElement('div');
-  chemToggle.className='bc-label';chemToggle.style.cursor='pointer';chemToggle.textContent='Part 2 · The 90-Second Chemistry Primer (tap to expand)';
-  var chemBody=document.createElement('div');chemBody.style.display='none';
+  chemToggle.className='bc-label';chemToggle.textContent='Part 2 · The 90-Second Chemistry Primer';
+  var chemBody=document.createElement('div');
   var jobsSubLbl=document.createElement('div');
   jobsSubLbl.style.cssText='font-size:.66rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--blue);margin:2px 0 4px;';
   jobsSubLbl.textContent='Three Jobs — Forza’s Product Lines';
@@ -710,7 +711,6 @@ function buildDiagnosticTraining(){
     famTbl.appendChild(d);
   });
   chemBody.appendChild(famTbl);
-  chemToggle.onclick=function(){chemBody.style.display = chemBody.style.display==='none' ? 'block' : 'none';};
   wrap.appendChild(chemToggle);wrap.appendChild(chemBody);
 
   // Spray-contact-adhesive checklist (IC932/933/934/946/947/956) — these
@@ -734,9 +734,6 @@ function buildDiagnosticTraining(){
   var defRow=document.createElement('div');defRow.style.cssText='padding:8px 0;';
   defRow.innerHTML='<span style="font-size:.8rem;font-weight:700;color:var(--blue);">None of the above:</span> <span style="font-size:.76rem;color:#333;"><span style="color:var(--orange);font-weight:700;">'+DIAG_DATA.spraySDefault.yes+'</span> — '+DIAG_DATA.spraySDefault.why+'</span>';
   sprayCard.appendChild(defRow);
-  var conflictBox=document.createElement('div');conflictBox.style.cssText='margin-top:6px;padding:10px 12px;background:#fff;border:1px dashed var(--orange);border-radius:6px;font-size:.74rem;color:#555;';
-  conflictBox.innerHTML='<b style="color:var(--orange);">If more than one applies:</b> '+DIAG_DATA.sprayConflictNote;
-  sprayCard.appendChild(conflictBox);
   var ic956Tbl=document.createElement('div');ic956Tbl.style.marginTop='12px';
   var ic956Head=document.createElement('div');ic956Head.style.cssText='font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--blue);margin-bottom:4px;';ic956Head.textContent='IC932 / IC956 across verticals';
   ic956Tbl.appendChild(ic956Head);
