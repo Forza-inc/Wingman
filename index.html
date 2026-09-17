@@ -647,16 +647,13 @@ function dRow(label,val,cls){var r=document.createElement('div');r.style.cssText
 function buildDiagnosticTraining(opts){
   opts=opts||{};
   var wrap=document.createElement('div');
-  var back=document.createElement('a');back.href='#';
-  back.style.cssText='display:inline-block;margin-bottom:16px;font-size:.78rem;font-weight:700;color:var(--orange);text-decoration:none;';
-  if(opts.fromFieldGuides){
-    back.textContent='← Back to Field Guides';
-    back.onclick=function(e){e.preventDefault();fgG=1;fgC=0;buildFG();};
-  } else {
+  if(!opts.fromFieldGuides){
+    var back=document.createElement('a');back.href='#';
+    back.style.cssText='display:inline-block;margin-bottom:16px;font-size:.78rem;font-weight:700;color:var(--orange);text-decoration:none;';
     back.textContent='← Back to Training';
     back.onclick=function(e){e.preventDefault();var tc=document.getElementById('trainingContent');tc.innerHTML='';tc.appendChild(buildTraining());};
+    wrap.appendChild(back);
   }
-  wrap.appendChild(back);
 
   var hero=document.createElement('div');hero.style.cssText='margin-bottom:24px;';
   var ttl=document.createElement('div');ttl.className='sg-title';ttl.textContent=DIAG_DATA.meta.title;ttl.style.cssText='font-family:K,Poppins,sans-serif;font-size:1.6rem;color:var(--blue);margin-bottom:6px;';
