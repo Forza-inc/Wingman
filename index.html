@@ -967,7 +967,7 @@ function buildCatalog(){
 
   var tabs=mk('div','sg-cattabs');
   STUDYGUIDE.categories.forEach(function(cat,i){
-    var btn=mk('button','sg-cattab',cat.name+' ('+cat.count+')');
+    var btn=mk('button','sg-cattab',cat.name);
     var color=SG_CAT_COLORS[cat.name]||'#1B3764';
     if(i===sgCatIdx){btn.classList.add('active');btn.style.background=color;btn.style.borderColor=color;}
     btn.onclick=(function(idx){return function(){sgCatIdx=idx;sgSearchQ='';search.value='';renderCatalogInPlace();};})(i);
