@@ -839,8 +839,6 @@ function buildDiagnosticTraining(opts){
   glosToggle.onclick=function(){glosBody.style.display = glosBody.style.display==='none' ? 'block' : 'none';};
   wrap.appendChild(glosToggle);wrap.appendChild(glosBody);
 
-  var pdfNote=document.createElement('div');pdfNote.style.cssText='margin-top:24px;font-size:.72rem;color:#999;text-align:center;';pdfNote.textContent='Also available as a printable Word doc for offline/field use — ask Mike for the current copy.';
-  wrap.appendChild(pdfNote);
 
   return wrap;
 }
@@ -1064,8 +1062,6 @@ function buildSalesProcess(opts){
   wrap.appendChild(qr);
   wrap.appendChild(sppPara(D.quickReferenceNote,'margin-top:10px;font-style:italic;color:#666;'));
 
-  var pdfNote=document.createElement('div');pdfNote.style.cssText='margin-top:24px;font-size:.72rem;color:#999;text-align:center;';pdfNote.textContent='Also available as a downloadable PDF — see the Documents tab or Reference Library above.';
-  wrap.appendChild(pdfNote);
 
   return wrap;
 }
