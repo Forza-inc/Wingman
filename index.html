@@ -180,6 +180,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0;}
 .sp-badge{position:absolute;top:6px;right:6px;color:#fff;font-size:.58rem;font-weight:700;letter-spacing:.1em;padding:2px 7px;border-radius:2px;}
 .sp-badge.good{background:#186830;}.sp-badge.bad{background:#B83830;}
 .sp-prac{display:grid;grid-template-columns:2fr 1fr;gap:12px;}
+.sp-vid{display:inline-flex;align-items:center;gap:8px;margin:4px 0 14px;padding:9px 16px;background:#F16022;color:#fff;font-weight:700;font-size:.78rem;border-radius:4px;text-decoration:none;}.sp-vid:hover{background:#d4511a;}.sp-vid-i{font-size:.7rem;}
 .sp-sub{font-weight:700;color:#1B3764;font-size:.78rem;margin:8px 0 3px;}
 .sp-li{font-size:.74rem;color:#333;line-height:1.4;margin-bottom:3px;padding-left:12px;position:relative;}
 .sp-li:before{content:'\25A0';color:#F16A26;position:absolute;left:0;font-size:.55rem;top:3px;}
@@ -2257,6 +2258,7 @@ function buildSpray(){
   var w=mk('div','sp');
   w.appendChild(mk('div','sp-title','How to Spray It Right'));
   w.appendChild(mk('div','fg-guide-sub','Setup, technique and troubleshooting for any Forza canister spray adhesive.'));
+  var vl=document.createElement('a');vl.className='sp-vid';vl.href='https://applichem.sharepoint.com/:v:/r/sites/Marketing/Shared%20Documents/Competitive%20Intelligence/Canister%20Spray%20Training%20-%201080p.mp4?d=wd26418c1bef948c091850ddb4b981df6&csf=1&web=1&e=EYAhZn';vl.target='_blank';vl.rel='noopener';vl.appendChild(mk('span','sp-vid-i','\u25B6'));vl.appendChild(document.createTextNode('Watch the canister spray demonstration video'));w.appendChild(vl);
   SP_STEPS.forEach(function(s){
     var sec=mk('div','sp-sec');sec.appendChild(spHead(s.n,s.tag));
     if(s.kind==='grid4'||s.kind==='grid3'){var g=mk('div','sp-grid '+(s.kind==='grid4'?'g4':'g3'));s.items.forEach(function(x){g.appendChild(spFig(x[0],x[1],x[2]));});sec.appendChild(g);
@@ -2447,7 +2449,7 @@ function buildReading(){
     w.appendChild(rdQuiz('Check yourself: answer from the IC932 TDS',RD_Q));
   }
   if(rdT===2){
-    w.appendChild(mk('div','rd-intro','Every SDS has the same 16 sections in the same order. The six marked in orange are the ones marketing and sales use most. The rest serve safety, quality and operations. Worked example: the IC932 SDS (version V8).'));
+    w.appendChild(mk('div','rd-intro','Every SDS has the same 16 sections in the same order. The seven marked in orange are the ones marketing and sales use most. The rest serve safety, quality and operations. Worked example: the IC932 SDS (version V8).'));
     var t=mk('div','rd-tbl rd-sd');var hd=mk('div','rd-r rd-hd');['#','Section','What it holds'].forEach(function(x){hd.appendChild(mk('div','rd-c',x));});t.appendChild(hd);
     RD_SDS.forEach(function(r){var row=mk('div','rd-r'+(r[3]?' rd-hi':''));row.appendChild(mk('div','rd-c rd-num',r[0]));row.appendChild(mk('div','rd-c rd-pn',r[1]));var cc=mk('div','rd-c');cc.appendChild(document.createTextNode(r[2]));if(r[4]){var ee=mk('div','rd-ex');ee.appendChild(mk('span','rd-exl','IC932 SDS says '));ee.appendChild(document.createTextNode(r[4]));cc.appendChild(ee);}row.appendChild(cc);t.appendChild(row);});
     w.appendChild(t);
